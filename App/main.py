@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Request, Depends, status, FileResponse
+from fastapi import FastAPI, HTTPException, Request, Depends, status
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .auth import get_current_active_user
@@ -62,11 +63,11 @@ app.add_middleware(
 # Редирект на главную страницу для всех маршрутов
 @app.get("/")
 async def root():
-    return FileResponse("App/static/index.html")
+    return FileResponse("App/static/index.html", media_type="text/html")
 
 @app.get("/{path:path}")
 async def catch_all(path: str):
-    return FileResponse("App/static/index.html")
+    return FileResponse("App/static/index.html", media_type="text/html")
 
 # Редирект на главную страницу для всех маршрутов
 @app.get("/")
