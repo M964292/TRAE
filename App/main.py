@@ -9,36 +9,14 @@ from .storage import (
     save_questions,
     load_results,
     save_result,
-    load_test_sessions,
-    save_test_session,
-    get_test_session_by_id,
-    update_test_session,
-    load_questions_by_level,
-    save_question,
-    update_question_level,
-    load_student_by_name,
-    save_student,
-    update_student_level,
-    get_storage,
-    get_db
-)
-from App.auth import (
-    authenticate_user,
-    create_access_token,
-    get_current_active_user,
-    oauth2_scheme,
-    SECRET_KEY,
-    ALGORITHM,
-)
-from datetime import datetime
 
 app = FastAPI(
-    title="Adaptive Testing API",
-    description="API для адаптивного тестирования",
+    title="School Testing API",
+    description="API для системы тестирования учеников",
     version="1.0.0"
 )
 
-# Настройка CORS
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -47,35 +25,90 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Подключение статических файлов
+# Static files
 app.mount("/static", StaticFiles(directory="App/static"), name="static")
 
-# Настройка CORS для разрешения запросов с фронтенда
-from fastapi.middleware.cors import CORSMiddleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # В продакшене замените на конкретные домены
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Authentication middleware
+TEACHER_PASSWORD = "teacher123"  # В реальном приложении хранить в окружении
 
-# Редирект на главную страницу для всех маршрутов
-@app.get("/")
-async def root():
-    return FileResponse("App/static/index.html", media_type="text/html")
+class AuthRequest(BaseModel):
+    password: str
 
-@app.get("/{path:path}")
-async def catch_all(path: str):
-    return FileResponse("App/static/index.html", media_type="text/html")
+def verify_teacher_password(password: str):
+    return password == TEACHER_PASSWORD
 
-# Редирект на главную страницу для всех маршрутов
-@app.get("/")
-async def root():
-    return FileResponse("static/index.html")
+@app.post("/auth/teacher")
+async def authenticate_teacher(auth: AuthRequest):
+    if verify_teacher_password(auth.password):
+        token = jwt.encode(
+            {
+                "role": "teacher",
+                "exp": datetime.utcnow() + timedelta(hours=1)
+            },
+            "secret_key",
+            algorithm="HS256"
+        )
+        return {"token": token}
+    raise HTTPException(status_code=401, detail="Invalid credentials")
 
-# --- Вспомогательные структуры для сессий ---
-student_sessions: Dict[str, TestSession] = {}
+# Routes for teacher
+@app.post("/tests")
+async def create_test(test: Test):
+    service.save_test(test)
+    return {"message": "Test created successfully"}
+@app.get("/tests/{test_id}/questions/{difficulty}")
+async def get_questions(test_id: str, difficulty: int):
+    questions = service.get_test_questions(test_id, difficulty)
+    return questions
+
+# Routes for students
+@app.post("/student/start")
+async def start_test(student: Student):
+    test = service.load_test(student.test_id)
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+    
+    first_question = service.get_next_question(student)
+    return {
+        "test": test,
+        "first_question": first_question,
+        "current_difficulty": student.current_difficulty
+    }
+
+@app.post("/student/answer")
+async def submit_answer(student: Student, question_id: int, answer: int):
+    test = service.load_test(student.test_id)
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+    
+    question = next((q for q in test.questions if q.id == question_id), None)
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+    
+    is_correct = question.correct_answer == answer
+    student.current_difficulty = service.update_difficulty(student, is_correct)
+    student.answers.append({
+        "question_id": question_id,
+        "answer": answer,
+        "is_correct": is_correct,
+        "points": question.points if is_correct else 0,
+        "difficulty": question.difficulty
+    })
+    
+    next_question = service.get_next_question(student)
+    
+    return {
+        "next_question": next_question,
+        "current_difficulty": student.current_difficulty,
+        "points": question.points if is_correct else 0,
+        "is_correct": is_correct
+    }
+
+@app.post("/student/finish")
+async def finish_test(student: Student):
+    student.end_time = datetime.now()
+    service.save_student_result(student)
+    return {"message": "Test completed successfully"}
 
 @app.get("/")
 def read_root():

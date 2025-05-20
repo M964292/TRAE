@@ -7,14 +7,16 @@ services:
       # Установка зависимостей Python
       pip install -r requirements.txt
       pip install "fastapi>=0.109.0"
-  
+      
       # Установка зависимостей Node.js
       cd frontend && npm install && npm run build
       
-      # Создаем директорию для статических файлов
+      # Создаем необходимые директории
       mkdir -p App/static
+      mkdir -p tests
+      mkdir -p data
       
-      # Копируем все файлы из frontend/public и frontend/build
+      # Копируем статические файлы
       cp -r frontend/public/* App/static/
       cp -r frontend/build/* App/static/
     startCommand: |
