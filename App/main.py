@@ -7,7 +7,7 @@ from .storage import (
     load_questions,
     save_questions,
     load_results,
-    save_results,
+    save_result,
     load_test_sessions,
     save_test_session,
     get_test_session_by_id,
@@ -18,7 +18,8 @@ from .storage import (
     load_student_by_name,
     save_student,
     update_student_level,
-    get_storage
+    get_storage,
+    get_db
 )
 from App.auth import (
     authenticate_user,
@@ -78,35 +79,46 @@ def get_questions(test_name: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 @app.post("/questions/{test_name}")
-def save_questions_endpoint(test_name: str, data: Dict[str, Any], current_user: dict = Depends(get_current_active_user)):
+def save_questions_endpoint(test_name: str, data: Dict[str, Any], current_user: dict = Depends(get_current_active_user), db: Session = Depends(get_db)):
     """Сохранить вопросы теста (для учителя)"""
-    if current_user["role"] != "teacher":
-        raise HTTPException(status_code=403, detail="Доступ только для учителей")
-    questions = data.get("questions", [])
-    save_questions(test_name, questions)
-    return {"status": "ok"}
+    if current_user.get("role") != "teacher":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    
+    try:
+        save_questions(test_name, data, db)
+        return {"message": "Вопросы успешно сохранены"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/start_test")
-def start_test(student: Student, test_name: str):
+def start_test(student: Student, test_name: str, db: Session = Depends(get_db)):
     """Начать тестирование: создать сессию ученика"""
-    session = create_test_session(student, test_name)
-    student_sessions[session.session_id] = session
-    return {"session_id": session.session_id}
+    try:
+        session = create_test_session(student, test_name)
+        save_test_session(session, db)
+        return session
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/next_question")
-def next_question(data: Dict[str, Any]):
+def next_question(data: Dict[str, Any], db: Session = Depends(get_db)):
     """Получить следующий вопрос с адаптацией сложности"""
-    session_id = data.get("session_id")
-    if session_id not in student_sessions:
-        raise HTTPException(status_code=404, detail="Сессия не найдена")
-    
-    session = student_sessions[session_id]
-    question = select_next_question(session)
-    
-    if not question:
-        return {"stop": True}
-    
-    return {"stop": False, "question": question}
+    try:
+        session = get_test_session_by_id(data["session_id"], db)
+        if not session:
+            raise HTTPException(status_code=404, detail="Сессия не найдена")
+        
+        answer = AnswerRecord(**data)
+        update_topic_stats(session, answer)
+        next_level = calculate_next_level(session, answer)
+        
+        question = select_next_question(session)
+        if not question:
+            raise HTTPException(status_code=404, detail="Вопросы не найдены")
+        
+        return {"question": question, "next_level": next_level}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/submit_answer")
 def submit_answer(data: Dict[str, Any]):
@@ -155,53 +167,31 @@ def submit_answer(data: Dict[str, Any]):
     }
 
 @app.post("/finish_test")
-def finish_test(data: Dict[str, Any]):
+def finish_test(data: Dict[str, Any], db: Session = Depends(get_db)):
     """Завершить тест и сохранить результат"""
-    session_id = data.get("session_id")
-    if session_id not in student_sessions:
-        raise HTTPException(status_code=404, detail="Сессия не найдена")
-    
-    session = student_sessions[session_id]
-    session.finished = True
-    
-    # Рассчитываем финальную статистику
-    stats = calculate_final_stats(session)
-    
-    # Формируем результат
-    result = {
-        "student": session.student.name,
-        "test_name": session.student.subject_code,
-        "start_time": session.start_time,
-        "end_time": datetime.now().isoformat(),
-        "answers": session.answers,
-        "total_score": stats["total_score"],
-        "topic_scores": stats["topic_scores"],
-        "difficulty_distribution": stats["difficulty_distribution"],
-        "time_spent": stats["time_spent"]
-    }
-    
-    # Сохраняем результат
-    save_result(session.student.subject_code, result)
-    
-    # Удаляем сессию из памяти
-    del student_sessions[session_id]
-    
-    return {
-        "status": "ok",
-        "total_score": stats["total_score"],
-        "topic_scores": stats["topic_scores"],
-        "difficulty_distribution": stats["difficulty_distribution"],
-        "time_spent": stats["time_spent"]
-    }
+    try:
+        session = get_test_session_by_id(data["session_id"], db)
+        if not session:
+            raise HTTPException(status_code=404, detail="Сессия не найдена")
+        
+        result = calculate_final_stats(session)
+        save_result(data["test_name"], result, db)
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/teacher/results")
-def get_results(data: Dict[str, Any], current_user: dict = Depends(get_current_active_user)):
+def get_results(data: Dict[str, Any], current_user: dict = Depends(get_current_active_user), db: Session = Depends(get_db)):
     """Получить результаты теста (для учителя)"""
-    if current_user["role"] != "teacher":
-        raise HTTPException(status_code=403, detail="Доступ только для учителей")
-    test_name = data.get("test_name")
-    results = load_results(test_name)
-    return {"results": results}
+    if current_user.get("role") != "teacher":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    
+    try:
+        results = load_results(data["test_name"], db)
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/token")
 async def login_for_access_token(username: str, password: str):

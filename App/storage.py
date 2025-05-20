@@ -1,5 +1,4 @@
 from .models import Student, Question, Result, AnswerRecord, TestSession
-from .auth import get_current_active_user
 from typing import List, Dict, Any, Optional, Union
 from sqlalchemy import create_engine, Column, Integer, String, Float, JSON, DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -25,16 +24,105 @@ def get_db():
     finally:
         db.close()
 
+def get_storage():
+    return SessionLocal()
+
+# Создаем базовый класс для моделей
+Base = declarative_base()
+
+# Создаем движок базы данных
+engine = create_engine('sqlite:///./trae.db')
+
+# Создаем сессию базы данных
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "tests_data")
 
-def load_questions(test_name: str) -> List[Question]:
-    """Загрузить вопросы теста из JSON файла"""
-    base = os.path.join(os.path.dirname(__file__), "..", "tests_data")
-    test_dir = os.path.join(base, test_name)
-    if not os.path.exists(test_dir):
-        raise FileNotFoundError(f"Тест {test_name} не найден")
-    
-    questions = []
+def load_questions(test_name: str, db: Session) -> List[Question]:
+    """Загрузить вопросы теста из базы данных"""
+    return db.query(Question).filter(Question.test_name == test_name).all()
+
+def save_questions(test_name: str, questions: List[Dict[str, Any]], db: Session):
+    """Сохранить вопросы теста в базу данных"""
+    for question_data in questions:
+        question = Question(**question_data)
+        db.add(question)
+    db.commit()
+
+def load_results(test_name: str, db: Session) -> List[Result]:
+    """Загрузить результаты теста из базы данных"""
+    return db.query(Result).filter(Result.test_name == test_name).all()
+
+def save_result(test_name: str, result: Dict[str, Any], db: Session):
+    """Сохранить результат теста в базу данных"""
+    result_obj = Result(**result)
+    db.add(result_obj)
+    db.commit()
+
+def load_test_sessions(db: Session) -> List[TestSession]:
+    """Загрузить все сессии тестирования"""
+    return db.query(TestSession).all()
+
+def save_test_session(session: TestSession, db: Session):
+    """Сохранить сессию тестирования"""
+    db.add(session)
+    db.commit()
+
+def get_test_session_by_id(session_id: int, db: Session) -> Optional[TestSession]:
+    """Получить сессию по ID"""
+    return db.query(TestSession).filter(TestSession.id == session_id).first()
+
+def update_test_session(session_id: int, data: Dict[str, Any], db: Session):
+    """Обновить сессию тестирования"""
+    session = db.query(TestSession).filter(TestSession.id == session_id).first()
+    if session:
+        for key, value in data.items():
+            setattr(session, key, value)
+        db.commit()
+
+def load_questions_by_level(test_name: str, level: int, db: Session) -> List[Question]:
+    """Загрузить вопросы определенного уровня"""
+    return db.query(Question).filter(
+        Question.test_name == test_name,
+        Question.level == level
+    ).all()
+
+def save_question(question: Dict[str, Any], db: Session):
+    """Сохранить новый вопрос"""
+    question_obj = Question(**question)
+    db.add(question_obj)
+    db.commit()
+
+def update_question_level(question_id: int, level: int, db: Session):
+    """Обновить уровень вопроса"""
+    question = db.query(Question).filter(Question.id == question_id).first()
+    if question:
+        question.level = level
+        db.commit()
+
+def load_student_by_name(name: str, db: Session) -> Optional[Student]:
+    """Получить ученика по имени"""
+    return db.query(Student).filter(Student.name == name).first()
+
+def save_student(student: Dict[str, Any], db: Session):
+    """Сохранить нового ученика"""
+    student_obj = Student(**student)
+    db.add(student_obj)
+    db.commit()
+
+def update_student_level(student_name: str, level: int, db: Session):
+    """Обновить уровень ученика"""
+    student = db.query(Student).filter(Student.name == student_name).first()
+    if student:
+        student.initial_level = level
+        db.commit()
     for filename in os.listdir(test_dir):
         if filename.endswith(".json"):
             with open(os.path.join(test_dir, filename), 'r', encoding='utf-8') as f:
