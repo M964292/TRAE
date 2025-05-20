@@ -1,11 +1,12 @@
 from typing import Optional, Dict, Any
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
-from jose import JWTError, jwt
+from jose import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from dotenv import load_dotenv
 import os
+from App.models import Student
 
 # Загружаем переменные окружения
 load_dotenv()

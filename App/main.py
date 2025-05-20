@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict, Any
-from app.models import Student, Question, Result, AnswerRecord, TestSession
-from app.storage import (
+from App.auth import get_current_user
+from App.models import Student, Question, Result
+from App.storage import get_db, get_storage_session
+from App.storage import (
     load_questions,
     save_questions,
     load_results,
