@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Depends, status, FileResponse
+from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .auth import get_current_active_user
@@ -50,8 +50,8 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Редирект на главную страницу для всех маршрутов
-@app.get("/{path:path}")
-async def catch_all(request: Request):
+@app.get("/")
+async def root():
     return FileResponse("static/index.html")
 
 # --- Вспомогательные структуры для сессий ---
