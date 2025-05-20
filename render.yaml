@@ -7,12 +7,15 @@ services:
       # Установка зависимостей Python
       pip install -r requirements.txt
       pip install "fastapi>=0.109.0"
-
+  
       # Установка зависимостей Node.js
       cd frontend && npm install && npm run build
-
-      # Копирование фронтенд-билда в папку бэкенда
-      cp -r frontend/build App/static
+  
+      # Создаем директорию для статических файлов
+      mkdir -p App/static
+  
+      # Копируем собранные файлы из build
+      cp -r frontend/build/* App/static/
     startCommand: |
       # Запуск FastAPI с поддержкой статических файлов
       cd App && uvicorn main:app --host 0.0.0.0 --port $PORT
