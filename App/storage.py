@@ -9,6 +9,22 @@ import json
 import os
 from pathlib import Path
 
+# Создаем базовый класс для моделей
+Base = declarative_base()
+
+# Создаем движок базы данных
+engine = create_engine('sqlite:///./trae.db')
+
+# Создаем сессию базы данных
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "tests_data")
 
 def load_questions(test_name: str) -> List[Question]:
