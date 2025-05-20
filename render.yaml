@@ -3,8 +3,18 @@ services:
     name: traebackend
     env: python
     rootDirectory: .
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn App.main:app --host 0.0.0.0 --port $PORT"
+    buildCommand: |
+      # Установка зависимостей Python
+      pip install -r requirements.txt
+
+      # Установка зависимостей Node.js
+      cd frontend && npm install && npm run build
+
+      # Копирование фронтенд-билда в папку бэкенда
+      cp -r frontend/build App/static
+    startCommand: |
+      # Запуск FastAPI с поддержкой статических файлов
+      cd App && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: SECRET_KEY
         fromEnvVar: SECRET_KEY

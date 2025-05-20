@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, Request, Depends, status
+from fastapi import FastAPI, HTTPException, Request, Depends, status, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from .auth import get_current_active_user
 from .models import Student, Question, Result, AnswerRecord, TestSession
 from .storage import get_db, get_storage_session
@@ -30,15 +31,28 @@ from App.auth import (
 )
 from datetime import datetime
 
-app = FastAPI()
+app = FastAPI(
+    title="Adaptive Testing API",
+    description="API для адаптивного тестирования",
+    version="1.0.0"
+)
 
+# Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # В продакшене заменить на конкретные домены
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Подключение статических файлов
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Редирект на главную страницу для всех маршрутов
+@app.get("/{path:path}")
+async def catch_all(request: Request):
+    return FileResponse("static/index.html")
 
 # --- Вспомогательные структуры для сессий ---
 student_sessions: Dict[str, TestSession] = {}
