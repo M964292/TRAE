@@ -1,0 +1,10 @@
+{
+  "name": "school-testing-frontend",
+  "type": "static",
+  "buildCommand": "npm ci && npm run build",
+  "startCommand": "serve -s build",
+  "env": {
+    "REACT_APP_API_URL": "https://school-testing-api.onrender.com"
+  },
+  "regions": ["us-east-1"]
+}
