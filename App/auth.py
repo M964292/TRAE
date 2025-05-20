@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from dotenv import load_dotenv
 import os
-from App.models import Student
+from .models import Student
 
 # Загружаем переменные окружения
 load_dotenv()

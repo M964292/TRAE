@@ -1,5 +1,5 @@
-from App.models import Student, Question, Result, AnswerRecord, TestSession
-from App.auth import get_current_user
+from .models import Student, Question, Result, AnswerRecord, TestSession
+from .auth import get_current_user
 from typing import List, Dict, Any, Optional, Union
 from sqlalchemy import create_engine, Column, Integer, String, Float, JSON, DateTime
 from sqlalchemy.ext.declarative import declarative_base
