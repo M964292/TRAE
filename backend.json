@@ -1,0 +1,19 @@
+{
+  "name": "school-testing-api",
+  "type": "web",
+  "buildCommand": "pip install -r requirements.txt",
+  "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT",
+  "env": {
+    "PORT": "{{PORT}}",
+    "DATABASE_URL": "{{DATABASE_URL}}",
+    "SECRET_KEY": "{{SECRET_KEY}}",
+    "ALGORITHM": "HS256",
+    "ACCESS_TOKEN_EXPIRE_MINUTES": "30"
+  },
+  "regions": ["us-east-1"],
+  "database": {
+    "type": "postgres",
+    "name": "school-testing-db"
+  },
+  "pythonVersion": "3.11.11"
+}
