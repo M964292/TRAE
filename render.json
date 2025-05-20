@@ -1,0 +1,10 @@
+{
+  "name": "school-testing",
+  "type": "static",
+  "buildCommand": "npm run build",
+  "startCommand": "serve -s build",
+  "env": {
+    "REACT_APP_API_URL": "{{REACT_APP_API_URL}}"
+  },
+  "regions": ["us-east-1"]
+}

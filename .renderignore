@@ -1,0 +1,13 @@
+# Ignore files that should not be deployed
+node_modules/
+.env
+.env.*
+.git
+.gitignore
+README.md
+package-lock.json
+*.log
+*.py[cod]
+*$py.class
+.Python
+__pycache__/
