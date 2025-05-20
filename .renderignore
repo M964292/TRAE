@@ -1,4 +1,18 @@
-# Ignore files that should not be deployed
+# Исключаем ненужные файлы
+__pycache__/
+*.pyc
+.env
+node_modules/
+.env.example
+*.log
+*.pyo
+*.pyd
+*.pyc
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/ Ignore files that should not be deployed
 node_modules/
 .env
 .env.*

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: traebackend
+    env: python
+    rootDirectory: .
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "cd app && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: SECRET_KEY
+        fromEnvVar: SECRET_KEY
+      - key: TEACHER_PASSWORD_HASH
+        fromEnvVar: TEACHER_PASSWORD_HASH
+      - key: STUDENT_PASSWORD_HASH
+        fromEnvVar: STUDENT_PASSWORD_HASH
+    healthCheckPath: /

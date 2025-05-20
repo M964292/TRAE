@@ -2,7 +2,6 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
 .Python
 env/
 build/
@@ -20,9 +19,27 @@ wheels/
 *.egg-info/
 .installed.cfg
 
+# Environment variables
+.env
+.env.*
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# Temporary files
+*.swp
+*.swo
+
 # Node
-node.exe
 node_modules/
+node.exe
 nodevars.bat
 npm
 npm.cmd
