@@ -10,11 +10,12 @@ services:
   
       # Установка зависимостей Node.js
       cd frontend && npm install && npm run build
-  
+      
       # Создаем директорию для статических файлов
       mkdir -p App/static
-  
-      # Копируем собранные файлы из build
+      
+      # Копируем все файлы из frontend/public и frontend/build
+      cp -r frontend/public/* App/static/
       cp -r frontend/build/* App/static/
     startCommand: |
       # Запуск FastAPI с поддержкой статических файлов
