@@ -19,6 +19,17 @@ var/
 wheels/
 *.egg-info/
 .installed.cfg
+
+# Node
+node.exe
+node_modules/
+nodevars.bat
+npm
+npm.cmd
+npm.ps1
+npx
+npx.cmd
+npx.ps1
 *.egg
 
 # Node
