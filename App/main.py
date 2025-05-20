@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
-from .auth import get_current_user
+from .auth import get_current_active_user
 from .models import Student, Question, Result, AnswerRecord, TestSession
 from .storage import get_db, get_storage_session
 from .storage import (
