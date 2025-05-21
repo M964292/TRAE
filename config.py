@@ -1,8 +1,4 @@
-from dotenv import load_dotenv
 import os
-
-# Загрузка переменных окружения
-load_dotenv()
 
 # Конфигурация
 SUPABASE_URL = os.getenv("SUPABASE_URL")
