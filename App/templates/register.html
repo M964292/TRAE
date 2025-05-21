@@ -12,36 +12,124 @@
             <h2>Регистрация</h2>
             
             <form class="auth-form" id="registerForm">
-                <input type="email" id="email" placeholder="Email" required>
-                <input type="password" id="password" placeholder="Пароль" required>
-                <input type="password" id="confirmPassword" placeholder="Подтвердите пароль" required>
-                <input type="text" id="fullName" placeholder="ФИО" required>
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
                 
-                <div class="role-selection">
-                    <label>
-                        <input type="radio" name="role" value="teacher" required>
-                        Учитель
-                    </label>
-                    <label>
-                        <input type="radio" name="role" value="student" required>
-                        Ученик
-                    </label>
+                <div class="form-group">
+                    <label for="password">Пароль:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Подтвердите пароль:</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fullName">ФИО:</label>
+                    <input type="text" id="fullName" name="fullName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Роль:</label>
+                    <div class="role-selection">
+                        <label>
+                            <input type="radio" name="role" value="teacher" required>
+                            Учитель
+                        </label>
+                        <label>
+                            <input type="radio" name="role" value="student" required>
+                            Ученик
+                        </label>
+                    </div>
                 </div>
 
-                <div id="teacherFields" style="display: none;">
-                    <input type="text" id="specialization" placeholder="Специализация">
+                <div id="teacherFields" class="form-group" style="display: none;">
+                    <label for="specialization">Специализация:</label>
+                    <input type="text" id="specialization" name="specialization" required>
                 </div>
 
-                <div id="studentFields" style="display: none;">
-                    <input type="number" id="grade" placeholder="Класс">
-                    <input type="text" id="className" placeholder="Номер класса">
+                <div id="studentFields" class="form-group" style="display: none;">
+                    <label for="grade">Класс:</label>
+                    <input type="number" id="grade" name="grade" min="1" max="11" required>
+                    <label for="className">Номер класса:</label>
+                    <input type="text" id="className" name="className" required>
                 </div>
 
-                <button type="submit">Зарегистрироваться</button>
+                <div class="form-group">
+                    <button type="submit" class="submit-btn">Зарегистрироваться</button>
+                </div>
+                
                 <div id="registerError" class="error-message"></div>
             </form>
         </div>
     </div>
+
+    <style>
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+
+        .auth-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .role-selection {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .error-message {
+            color: #dc3545;
+            margin-top: 1rem;
+            text-align: center;
+        }
+    </style>
 
     <script>
         // Переключение полей в зависимости от роли
@@ -61,29 +149,57 @@
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const registerError = document.getElementById('registerError');
+            registerError.textContent = '';
             
             // Базовая валидация
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
-            
+            const email = document.getElementById('email').value;
+            const fullName = document.getElementById('fullName').value;
+
+            if (!email || !password || !confirmPassword || !fullName) {
+                registerError.textContent = 'Все поля обязательны для заполнения';
+                return;
+            }
+
             if (password !== confirmPassword) {
                 registerError.textContent = 'Пароли не совпадают';
                 return;
             }
 
+            if (password.length < 6) {
+                registerError.textContent = 'Пароль должен быть не менее 6 символов';
+                return;
+            }
+
             const role = document.querySelector('input[name="role"]:checked').value;
             const data = {
-                email: document.getElementById('email').value,
+                email: email,
                 password: password,
-                full_name: document.getElementById('fullName').value,
+                full_name: fullName,
                 role: role
             };
 
             if (role === 'teacher') {
-                data.specialization = document.getElementById('specialization').value;
+                const specialization = document.getElementById('specialization').value;
+                if (!specialization) {
+                    registerError.textContent = 'Для учителя обязательна специализация';
+                    return;
+                }
+                data.specialization = specialization;
             } else {
-                data.grade = document.getElementById('grade').value;
-                data.class_name = document.getElementById('className').value;
+                const grade = document.getElementById('grade').value;
+                const className = document.getElementById('className').value;
+                if (!grade || !className) {
+                    registerError.textContent = 'Для ученика обязательны класс и номер класса';
+                    return;
+                }
+                if (grade < 1 || grade > 11) {
+                    registerError.textContent = 'Класс должен быть от 1 до 11';
+                    return;
+                }
+                data.grade = parseInt(grade);
+                data.class_name = className;
             }
 
             try {
@@ -104,14 +220,6 @@
             } catch (error) {
                 registerError.textContent = 'Произошла ошибка при регистрации';
             }
-// Валидация формы
-document.getElementById('registerForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const registerError = document.getElementById('registerError');
-    
-    // Базовая валидация
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
     const email = document.getElementById('email').value;
     const fullName = document.getElementById('fullName').value;
 
