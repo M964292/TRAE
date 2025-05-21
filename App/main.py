@@ -5,32 +5,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-from .models.user import UserCreate, User, Teacher, Student
-from sqlalchemy.orm import Session
-from .database import get_db
-from passlib.context import CryptContext
-from datetime import datetime, timedelta
-import jwt
-from fastapi.security import OAuth2PasswordBearer
-from test_service import TestService
-from models import Test, Student, Question
-from typing import List, Optional, Dict, Any
-import jwt
-from datetime import datetime, timedelta
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
-from .database import get_db
-
-# Инициализация сервиса
-test_service = TestService()
+from .models import UserCreate, User
+from .database import get_supabase
+from .auth import authenticate_user, create_user, create_access_token
+from ..config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from .routers import test, auth as auth_router
 
 app = FastAPI(
     title="School Testing API",
-    description="API для системы тестирования учеников",
+    description="API для управления тестированием в школе",
     version="1.0.0"
 )
 
-# CORS middleware
+# Настройка CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -39,42 +26,135 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Authentication
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# Настройка статических файлов и шаблонов
+app.mount("/static", StaticFiles(directory="App/static"), name="static")
+templates = Jinja2Templates(directory="App/templates")
 
-async def get_current_active_user(token: str = Depends(oauth2_scheme)):
+# Регистрация пользователя
+@app.post("/register")
+async def register(user: UserCreate):
     try:
-        payload = jwt.decode(token, "secret", algorithms=["HS256"])
-        username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        return {"username": username}
-    except jwt.PyJWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
+        # Создаем нового пользователя в Supabase
+        user_data = {
+            "email": user.email,
+            "hashed_password": get_password_hash(user.password),
+            "full_name": user.full_name,
+            "role": user.role,
+            "specialization": user.specialization,
+            "grade": user.grade,
+            "class_name": user.class_name,
+            "is_active": True
+        }
+        new_user = create_user(user_data)
+        
+        # Создаем токен
+        access_token = create_access_token(
+            data={"sub": user.email},
+            expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         )
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": new_user
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-# Static files
-static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-if not os.path.exists(static_dir):
-    os.makedirs(static_dir)
+# Вход в систему
+@app.post("/login")
+async def login(user: UserCreate):
+    try:
+        # Аутентифицируем пользователя
+        db_user = authenticate_user(user.email, user.password)
+        if not db_user:
+            raise HTTPException(status_code=400, detail="Incorrect email or password")
+        
+        # Создаем токен
+        access_token = create_access_token(
+            data={"sub": user.email},
+            expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        )
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": db_user
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+# Получение информации о текущем пользователе
+@app.get("/users/me")
+async def read_users_me(current_user: dict = Depends(auth.get_current_user)):
+    return current_user
 
-templates = Jinja2Templates(directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"))
+# Получение всех пользователей (только для админов)
+@app.get("/users")
+async def read_users():
+    try:
+        supabase = get_supabase()
+        response = supabase.table("users").select("*").execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Получение пользователя по ID
+@app.get("/users/{user_id}")
+async def read_user(user_id: str):
+    try:
+        supabase = get_supabase()
+        response = supabase.table("users").select("*").eq("id", user_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Обновление информации о пользователе
+@app.put("/users/{user_id}")
+async def update_user(user_id: str, user: UserCreate):
+    try:
+        supabase = get_supabase()
+        user_data = {
+            "email": user.email,
+            "hashed_password": get_password_hash(user.password),
+            "full_name": user.full_name,
+            "role": user.role,
+            "specialization": user.specialization,
+            "grade": user.grade,
+            "class_name": user.class_name,
+            "is_active": True
+        }
+        response = supabase.table("users").update(user_data).eq("id", user_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Удаление пользователя
+@app.delete("/users/{user_id}")
+async def delete_user(user_id: str):
+    try:
+        supabase = get_supabase()
+        response = supabase.table("users").delete().eq("id", user_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"message": "User deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
 async def root():
-    return FileResponse(os.path.join(static_dir, "index.html"))
+    return FileResponse("App/static/index.html", media_type="text/html")
+
+@app.get("/{path:path}")
+async def catch_all(path: str):
+    return FileResponse("App/static/index.html", media_type="text/html")
 
 @app.get("/tests")
-async def tests_page(request: Request, current_user: dict = Depends(get_current_active_user)):
+async def tests_page(request: Request, current_user: dict = Depends(auth.get_current_user)):
     return templates.TemplateResponse("tests.html", {"request": request})
 
 @app.get("/auth/login")
@@ -91,90 +171,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "your-secret-key-change-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-# Authentication middleware
-TEACHER_PASSWORD = "teacher123"  # В реальном приложении хранить в окружении
-
-# Database
-users_db = []  # В реальном приложении это будет база данных
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    # Создаем пользователя
-    user_data = {
-        "email": user.email,
-        "hashed_password": auth.get_password_hash(user.password),
-        "full_name": user.full_name,
-        "role": user.role,
-        "specialization": user.specialization if user.role == "teacher" else None,
-        "grade": user.grade if user.role == "student" else None,
-        "class_name": user.class_name if user.role == "student" else None,
-        "is_active": True
-    }
-    
-    response = supabase.table("users").insert(user_data).execute()
-    
-    if not response.data:
-        raise HTTPException(status_code=500, detail="Failed to create user")
-    
-    return models.User(**response.data[0])
-
-@app.post("/auth/login")
-async def login(user: UserCreate):
-    # Получаем клиента Supabase
-    supabase = database.get_supabase()
-    
-    # Получаем пользователя из базы
-    db_user = supabase.table("users").select("*").eq("email", user.email).execute()
-    
-    if not db_user.data:
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
-    
-    user_data = db_user.data[0]
-    
-    if not auth.verify_password(user.password, user_data["hashed_password"]):
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
-    
-    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
-    
-    return {"access_token": access_token, "token_type": "bearer"}
-
-@app.get("/users/me")
-async def read_users_me(current_user: models.User = Depends(auth.get_current_active_user)):
-    return current_user
-
-class AuthRequest(BaseModel):
-    password: str
-
-def verify_teacher_password(password: str):
-    return password == TEACHER_PASSWORD
-
-@app.post("/auth/teacher")
-async def authenticate_teacher(auth: AuthRequest):
-    if verify_teacher_password(auth.password):
-        token = jwt.encode(
-            {
-                "role": "teacher",
-                "exp": datetime.utcnow() + timedelta(hours=1)
-            },
-            "secret_key",
-            algorithm="HS256"
-        )
-        return {"token": token}
-    raise HTTPException(status_code=401, detail="Invalid credentials")
 
 # Routes for teacher
 @app.post("/tests")

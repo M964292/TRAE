@@ -14,10 +14,3 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # Функция для выполнения запросов к Supabase
 def get_supabase():
     return supabase
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
