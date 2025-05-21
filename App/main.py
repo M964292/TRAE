@@ -10,10 +10,11 @@ from .database import get_supabase
 from .auth import authenticate_user, create_user, create_access_token
 from ..config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from .routers import test, auth as auth_router
-from .database import create_tables, check_tables
+from .database import create_tables, check_tables, create_test_user
 
 create_tables()
 check_tables()
+create_test_user()
 
 app = FastAPI(
     title="School Testing API",

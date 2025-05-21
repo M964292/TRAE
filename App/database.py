@@ -97,3 +97,22 @@ def check_tables():
     print(f"Таблица test_sessions: {'существует' if sessions.data else 'не существует'}")
     
     return users.data, tests.data, questions.data, sessions.data
+
+def create_test_user():
+    """Создает тестового пользователя в Supabase"""
+    client = get_supabase()
+    
+    # Создаем тестового пользователя
+    user_data = {
+        'id': '8b6b619a-6466-4128-88ec-94abd4b3082b',
+        'email': 'test@example.com',
+        'hashed_password': 'testpassword',
+        'full_name': 'Test User',
+        'role': 'student',
+        'is_active': True,
+        'created_at': '2025-05-21 13:10:30.122165+00'
+    }
+    
+    result = client.table('users').insert(user_data).execute()
+    print(f"Тестовый пользователь создан: {result.data}")
+    return result.data
