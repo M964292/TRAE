@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тесты</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <a href="/">Главная</a>
+            <a href="/tests">Тесты</a>
+            <a href="/auth/logout">Выход</a>
+        </div>
+
+        <div class="content">
+            <h1>Доступные тесты</h1>
+            
+            <div id="testsList"></div>
+        </div>
+    </div>
+
+    <script>
+        async function loadTests() {
+            try {
+                const response = await fetch('/api/tests');
+                if (response.ok) {
+                    const tests = await response.json();
+                    const testsList = document.getElementById('testsList');
+                    testsList.innerHTML = tests.map(test => `
+                        <div class="test-item">
+                            <h3>${test.name}</h3>
+                            <p>Описание: ${test.description}</p>
+                            <button onclick="startTest('${test.id}')">Начать тест</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Ошибка при загрузке тестов:', error);
+            }
+        }
+
+        async function startTest(testId) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/tests/${testId}/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    window.location.href = `/test/${testId}`;
+                }
+            } catch (error) {
+                console.error('Ошибка при начале теста:', error);
+            }
+        }
+
+        // Загрузка тестов при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadTests);
+    </script>
+</body>
+</html>

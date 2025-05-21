@@ -1,9 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>TRAE</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестовая Система</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <div id="root"></div>
+    <div class="container">
+        <div class="auth-container">
+            <h2>Авторизация</h2>
+            <form class="auth-form" id="authForm">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Пароль" required>
+                <button type="submit">Войти</button>
+                <div id="authError" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const authError = document.getElementById('authError');
+
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('token', data.access_token);
+                    window.location.href = '/tests';
+                } else {
+                    const error = await response.json();
+                    authError.textContent = error.detail || 'Ошибка авторизации';
+                }
+            } catch (error) {
+                authError.textContent = 'Произошла ошибка при авторизации';
+            }
+        });
+    </script>
 </body>
 </html>

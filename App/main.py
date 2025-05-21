@@ -1,8 +1,10 @@
 import os
 from fastapi import FastAPI, HTTPException, Request, Depends, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from pathlib import Path
 from fastapi.security import OAuth2PasswordBearer
 from test_service import TestService
 from models import Test, Student, Question
@@ -58,6 +60,24 @@ if not os.path.exists(static_dir):
     os.makedirs(static_dir)
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+templates = Jinja2Templates(directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"))
+
+@app.get("/")
+async def root():
+    return FileResponse(os.path.join(static_dir, "index.html"))
+
+@app.get("/tests")
+async def tests_page(request: Request, current_user: dict = Depends(get_current_active_user)):
+    return templates.TemplateResponse("tests.html", {"request": request})
+
+@app.get("/auth/login")
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.get("/auth/register")
+async def register_page(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
 
 # Authentication middleware
 TEACHER_PASSWORD = "teacher123"  # В реальном приложении хранить в окружении
