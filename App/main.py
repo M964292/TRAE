@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from test_service import TestService
 from models import Test, Student, Question
 from typing import List, Optional
-import PyJWT as jwt
+import jwt
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 
