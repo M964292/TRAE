@@ -1,14 +1,15 @@
 from fastapi import FastAPI, HTTPException, Request, Depends, status
-from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from .auth import get_current_active_user
-from .models import Student, Question, Result, AnswerRecord, TestSession
-from .storage import (
-    load_questions,
-    save_questions,
-    load_results,
-    save_result,
+from test_service import TestService
+from models import Test, Student, Question
+from typing import List, Optional
+import jwt
+from datetime import datetime, timedelta
+from pydantic import BaseModel
+
+# Инициализация сервиса
+test_service = TestService()
 
 app = FastAPI(
     title="School Testing API",
@@ -54,12 +55,133 @@ async def authenticate_teacher(auth: AuthRequest):
 # Routes for teacher
 @app.post("/tests")
 async def create_test(test: Test):
+    test_service.save_test(test)
+    return {"message": "Test created successfully"}
+
+@app.get("/tests")
+async def get_tests():
+    tests = []
+    for file in os.listdir("tests"):
+        if file.endswith(".json"):
+            test = test_service.load_test(file[:-5])
+            if test:
+                tests.append(test)
+    return tests
+
+@app.get("/tests/{test_id}")
+async def get_test(test_id: str):
+    test = test_service.load_test(test_id)
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+    return test
+
+@app.put("/tests/{test_id}")
+async def update_test(test_id: str, test: Test):
+    test.id = test_id
+    test_service.save_test(test)
+    return {"message": "Test updated successfully"}
+
+@app.delete("/tests/{test_id}")
+async def delete_test(test_id: str):
+    test_file = os.path.join("tests", f"{test_id}.json")
+    if os.path.exists(test_file):
+        os.remove(test_file)
+        return {"message": "Test deleted successfully"}
+    raise HTTPException(status_code=404, detail="Test not found")
+
+@app.get("/tests/{test_id}/results")
+async def get_test_results(test_id: str):
+    return test_service.get_results(test_id)
+
+# Routes for students
+@app.post("/student/start")
+async def start_test(student: Student):
+    test = test_service.load_test(student.test_id)
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+    
+    first_question = test_service.get_next_question(student)
+    return {
+        "test": test,
+        "first_question": first_question,
+        "current_difficulty": student.current_difficulty
+    }
+
+@app.post("/student/answer")
+async def submit_answer(student: Student, question_id: int, answer: int):
+    test = test_service.load_test(student.test_id)
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+    
+    question = next((q for q in test.questions if q.id == question_id), None)
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+    
+    is_correct = question.correct_answer == answer
+    student.current_difficulty = test_service.update_difficulty(student, is_correct)
+    student.answers.append({
+        "question_id": question_id,
+        "answer": answer,
+        "is_correct": is_correct,
+        "points": question.points if is_correct else 0,
+        "difficulty": question.difficulty
+    })
+    
+    next_question = test_service.get_next_question(student)
+    
+    return {
+        "next_question": next_question,
+        "current_difficulty": student.current_difficulty,
+        "points": question.points if is_correct else 0,
+        "is_correct": is_correct
+    }
+
+@app.post("/student/finish")
+async def finish_test(student: Student):
+    student.end_time = datetime.now()
+    test_service.save_student_result(student)
+    return {"message": "Test completed successfully"}
+
+# Authentication middleware
+TEACHER_PASSWORD = "teacher123"  # В реальном приложении хранить в окружении
+
+class AuthRequest(BaseModel):
+    password: str
+
+def verify_teacher_password(password: str):
+    return password == TEACHER_PASSWORD
+
+@app.post("/auth/teacher")
+async def authenticate_teacher(auth: AuthRequest):
+    if verify_teacher_password(auth.password):
+        token = jwt.encode(
+            {
+                "role": "teacher",
+                "exp": datetime.utcnow() + timedelta(hours=1)
+            },
+            "secret_key",
+            algorithm="HS256"
+        )
+        return {"token": token}
+    raise HTTPException(status_code=401, detail="Invalid credentials")
+
+# Routes for teacher
+@app.post("/tests")
+async def create_test(test: Test):
     service.save_test(test)
     return {"message": "Test created successfully"}
 @app.get("/tests/{test_id}/questions/{difficulty}")
 async def get_questions(test_id: str, difficulty: int):
-    questions = service.get_test_questions(test_id, difficulty)
+    questions = test_service.get_test_questions(test_id, difficulty)
     return questions
+
+@app.get("/")
+async def root():
+    return FileResponse("App/static/index.html", media_type="text/html")
+
+@app.get("/{path:path}")
+async def catch_all(path: str):
+    return FileResponse("App/static/index.html", media_type="text/html")
 
 # Routes for students
 @app.post("/student/start")
