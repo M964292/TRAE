@@ -104,6 +104,72 @@
             } catch (error) {
                 registerError.textContent = 'Произошла ошибка при регистрации';
             }
+// Валидация формы
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const registerError = document.getElementById('registerError');
+    
+    // Базовая валидация
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const email = document.getElementById('email').value;
+    const fullName = document.getElementById('fullName').value;
+
+    if (password !== confirmPassword) {
+        registerError.textContent = 'Пароли не совпадают';
+        return;
+    }
+
+    if (!email || !password || !fullName) {
+        registerError.textContent = 'Все обязательные поля должны быть заполнены';
+        return;
+    }
+
+    const role = document.querySelector('input[name="role"]:checked').value;
+    const data = {
+        email: email,
+        password: password,
+        full_name: fullName,
+        role: role
+    };
+
+    if (role === 'teacher') {
+        const specialization = document.getElementById('specialization').value;
+        if (!specialization) {
+            registerError.textContent = 'Для учителя необходимо указать специализацию';
+            return;
+        }
+        data.specialization = specialization;
+    } else {
+        const grade = document.getElementById('grade').value;
+        const className = document.getElementById('className').value;
+        if (!grade || !className) {
+            registerError.textContent = 'Для ученика необходимо указать класс и номер класса';
+            return;
+        }
+        data.grade = parseInt(grade);
+        data.class_name = className;
+    }
+
+    try {
+        const response = await fetch('/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+            window.location.href = '/auth/login';
+        } else {
+            const error = await response.json();
+            registerError.textContent = error.detail || 'Ошибка регистрации';
+        }
+    } catch (error) {
+        registerError.textContent = 'Произошла ошибка при регистрации';
+    }
+});
         });
     </script>
 </body>
