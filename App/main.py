@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-from models.user import UserCreate, User, Teacher, Student
+from .models.user import UserCreate, User, Teacher, Student
 from sqlalchemy.orm import Session
 from .database import get_db
 from passlib.context import CryptContext
