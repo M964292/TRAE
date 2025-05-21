@@ -2,12 +2,15 @@ import os
 from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import OAuth2PasswordBearer
 from test_service import TestService
 from models import Test, Student, Question
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import jwt
 from datetime import datetime, timedelta
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from database import get_db
 
 # Инициализация сервиса
 test_service = TestService()
@@ -26,6 +29,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Authentication
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+async def get_current_active_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, "secret", algorithms=["HS256"])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return {"username": username}
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 # Static files
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
