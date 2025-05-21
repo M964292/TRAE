@@ -171,33 +171,10 @@ async def finish_test(student: Student):
     test_service.save_student_result(student)
     return {"message": "Test completed successfully"}
 
-# Authentication middleware
-TEACHER_PASSWORD = "teacher123"  # В реальном приложении хранить в окружении
-
-class AuthRequest(BaseModel):
-    password: str
-
-def verify_teacher_password(password: str):
-    return password == TEACHER_PASSWORD
-
-@app.post("/auth/teacher")
-async def authenticate_teacher(auth: AuthRequest):
-    if verify_teacher_password(auth.password):
-        token = jwt.encode(
-            {
-                "role": "teacher",
-                "exp": datetime.utcnow() + timedelta(hours=1)
-            },
-            "secret_key",
-            algorithm="HS256"
-        )
-        return {"token": token}
-    raise HTTPException(status_code=401, detail="Invalid credentials")
-
 # Routes for teacher
 @app.post("/tests")
 async def create_test(test: Test):
-    service.save_test(test)
+    test_service.save_test(test)
     return {"message": "Test created successfully"}
 @app.get("/tests/{test_id}/questions/{difficulty}")
 async def get_questions(test_id: str, difficulty: int):
