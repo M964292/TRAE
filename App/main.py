@@ -10,7 +10,7 @@ import jwt
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from database import get_db
+from .database import get_db
 
 # Инициализация сервиса
 test_service = TestService()
