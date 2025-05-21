@@ -141,8 +141,29 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     if get_user(users_db, user.email):
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    created_user = create_user(users_db, user)
-    return created_user
+    # Создаем пользователя с учетом его роли
+    if user.role == "teacher":
+        db_user = Teacher(
+            email=user.email,
+            full_name=user.full_name,
+            role=user.role,
+            specialization=user.specialization,
+            hashed_password=get_password_hash(user.password),
+            is_active=True
+        )
+    else:
+        db_user = Student(
+            email=user.email,
+            full_name=user.full_name,
+            role=user.role,
+            grade=user.grade,
+            class_name=user.class_name,
+            hashed_password=get_password_hash(user.password),
+            is_active=True
+        )
+    
+    users_db.append(db_user)
+    return db_user
 
 @app.post("/auth/login")
 async def login(user: UserCreate, db: Session = Depends(get_db)):

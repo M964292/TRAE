@@ -8,6 +8,9 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    specialization: Optional[str] = None
+    grade: Optional[int] = None
+    class_name: Optional[str] = None
 
 class User(UserBase):
     id: int
