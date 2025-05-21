@@ -2,7 +2,7 @@
   "name": "school-testing-api",
   "type": "web",
   "buildCommand": "pip install -r requirements.txt",
-  "startCommand": "uvicorn App.main:app --host 0.0.0.0 --port $PORT",
+  "startCommand": "uvicorn TRAE.App.main:app --host 0.0.0.0 --port $PORT",
   "env": {
     "PORT": "{{PORT}}",
     "SUPABASE_URL": "{{SUPABASE_URL}}",
