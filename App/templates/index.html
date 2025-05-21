@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестирование</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Тестирование</h1>
+            <div class="user-info">
+                <span>{{ user.full_name }}</span>
+                <a href="/auth/logout">Выйти</a>
+            </div>
+        </div>
+
+        {% if user.role == 'teacher' %}
+            <div class="teacher-section">
+                <h2>Создать тест</h2>
+                <form action="/tests" method="POST">
+                    <input type="text" name="title" placeholder="Название теста" required>
+                    <input type="text" name="subject" placeholder="Предмет" required>
+                    <input type="number" name="grade" placeholder="Класс" required>
+                    <button type="submit">Создать</button>
+                </form>
+            </div>
+        {% endif %}
+
+        <div class="tests-section">
+            <h2>Доступные тесты</h2>
+            {% if tests %}
+                <div class="tests-list">
+                    {% for test in tests %}
+                        <div class="test-card">
+                            <h3>{{ test.title }}</h3>
+                            <p>Предмет: {{ test.subject }}</p>
+                            <p>Класс: {{ test.grade }}</p>
+                            <p>Создатель: {{ test.creator_full_name }}</p>
+                            {% if user.role == 'student' %}
+                                <a href="/tests/{{ test.id }}/start">Начать тест</a>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>Нет доступных тестов</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .teacher-section {
+            margin-bottom: 30px;
+        }
+
+        .tests-section {
+            margin-top: 30px;
+        }
+
+        .tests-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .test-card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .test-card h3 {
+            margin: 0 0 10px 0;
+        }
+
+        .test-card p {
+            margin: 5px 0;
+        }
+    </style>
+</body>
+</html>
