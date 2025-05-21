@@ -5,7 +5,7 @@ from jose import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
-from database import get_supabase
+from .database import get_supabase
 
 # Настройка аутентификации
 # Используем конфигурацию из config.py
