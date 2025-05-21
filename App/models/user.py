@@ -1,25 +1,25 @@
-from sqlalchemy import Boolean, Column, Integer, String, Enum
-from sqlalchemy.orm import relationship
-from App.database import Base
+from pydantic import BaseModel, EmailStr
+from typing import Optional
 from enum import Enum
 
 class UserRole(str, Enum):
     TEACHER = "teacher"
     STUDENT = "student"
 
-class User(Base):
-    __tablename__ = "users"
+class UserBase(BaseModel):
+    email: EmailStr
+    full_name: str
+    role: UserRole
+    specialization: Optional[str] = None
+    grade: Optional[int] = None
+    class_name: Optional[str] = None
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    full_name = Column(String)
-    role = Column(Enum(UserRole))
-    is_active = Column(Boolean, default=True)
-    specialization = Column(String, nullable=True)
-    grade = Column(Integer, nullable=True)
-    class_name = Column(String, nullable=True)
+class UserCreate(UserBase):
+    password: str
 
-    # Relationships
-    tests = relationship("Test", back_populates="creator")
-    student_results = relationship("StudentResult", back_populates="student")
+class User(UserBase):
+    id: str
+    is_active: bool = True
+
+    class Config:
+        from_attributes = True

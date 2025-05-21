@@ -1,18 +1,19 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 import os
 from dotenv import load_dotenv
+from supabase import create_client, Client
 
 load_dotenv()
 
-# Получаем URL базы данных из переменных окружения
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/test")
+# Получаем URL и ключ API Supabase из переменных окружения
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Создаем клиент Supabase
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-Base = declarative_base()
+# Функция для выполнения запросов к Supabase
+def get_supabase():
+    return supabase
 
 def get_db():
     db = SessionLocal()

@@ -108,78 +108,52 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-def get_user(db, email: str):
-    return next((user for user in db if user.email == email), None)
-
-def authenticate_user(db, email: str, password: str):
-    user = get_user(db, email)
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
-
-def create_user(db, user: UserCreate):
-    db_user = User(
-        email=user.email,
-        full_name=user.full_name,
-        role=user.role,
-        hashed_password=get_password_hash(user.password),
-        is_active=True
-    )
-    db.append(db_user)
-    return db_user
-
-@app.post("/auth/register")
-async def register(user: UserCreate, db: Session = Depends(get_db)):
-    if get_user(users_db, user.email):
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Создаем пользователя с учетом его роли
-    if user.role == "teacher":
-        db_user = Teacher(
-            email=user.email,
-            full_name=user.full_name,
-            role=user.role,
-            specialization=user.specialization,
-            hashed_password=get_password_hash(user.password),
-            is_active=True
-        )
-    else:
-        db_user = Student(
-            email=user.email,
-            full_name=user.full_name,
-            role=user.role,
-            grade=user.grade,
-            class_name=user.class_name,
-            hashed_password=get_password_hash(user.password),
-            is_active=True
-        )
+    # Создаем пользователя
+    user_data = {
+        "email": user.email,
+        "hashed_password": auth.get_password_hash(user.password),
+        "full_name": user.full_name,
+        "role": user.role,
+        "specialization": user.specialization if user.role == "teacher" else None,
+        "grade": user.grade if user.role == "student" else None,
+        "class_name": user.class_name if user.role == "student" else None,
+        "is_active": True
+    }
     
-    users_db.append(db_user)
-    return db_user
+    response = supabase.table("users").insert(user_data).execute()
+    
+    if not response.data:
+        raise HTTPException(status_code=500, detail="Failed to create user")
+    
+    return models.User(**response.data[0])
 
 @app.post("/auth/login")
-async def login(user: UserCreate, db: Session = Depends(get_db)):
-    user = authenticate_user(users_db, user.email, user.password)
-    if not user:
+async def login(user: UserCreate):
+    # Получаем клиента Supabase
+    supabase = database.get_supabase()
+    
+    # Получаем пользователя из базы
+    db_user = supabase.table("users").select("*").eq("email", user.email).execute()
+    
+    if not db_user.data:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email, "role": user.role},
-        expires_delta=access_token_expires
+    user_data = db_user.data[0]
+    
+    if not auth.verify_password(user.password, user_data["hashed_password"]):
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
+    
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
     )
+    
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.get("/users/me")
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
+async def read_users_me(current_user: models.User = Depends(auth.get_current_active_user)):
     return current_user
 
 class AuthRequest(BaseModel):
