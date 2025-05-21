@@ -17,8 +17,19 @@ services:
       mkdir -p /opt/render/project/src/data
       
       # Копируем статические файлы
-      cp -r frontend/public/* /opt/render/project/src/App/static/
-      cp -r frontend/build/* /opt/render/project/src/App/static/
+      cp -r frontend/public/* /opt/render/project/src/App/static/ || true
+      cp -r frontend/build/* /opt/render/project/src/App/static/ || true
+      
+      # Создаем файл index.html в директории static
+      echo '<!DOCTYPE html>
+      <html>
+      <head>
+          <title>TRAE</title>
+      </head>
+      <body>
+          <div id="root"></div>
+      </body>
+      </html>' > /opt/render/project/src/App/static/index.html
     startCommand: |
       # Запуск FastAPI с поддержкой статических файлов
       cd App && uvicorn main:app --host 0.0.0.0 --port $PORT
