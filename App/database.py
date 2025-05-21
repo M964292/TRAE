@@ -1,5 +1,8 @@
+import os
 from supabase import create_client, Client
 from config import SUPABASE_URL, SUPABASE_KEY
+import json
+from datetime import datetime, timezone
 
 # Создаем клиент Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -72,3 +75,25 @@ def create_tables():
     )
     
     print("Таблицы успешно созданы!")
+
+def check_tables():
+    """Проверяет существование таблиц в Supabase"""
+    client = get_supabase()
+    
+    # Проверяем таблицу пользователей
+    users = client.table('users').select('*').limit(1).execute()
+    print(f"Таблица users: {'существует' if users.data else 'не существует'}")
+    
+    # Проверяем таблицу тестов
+    tests = client.table('tests').select('*').limit(1).execute()
+    print(f"Таблица tests: {'существует' if tests.data else 'не существует'}")
+    
+    # Проверяем таблицу вопросов
+    questions = client.table('questions').select('*').limit(1).execute()
+    print(f"Таблица questions: {'существует' if questions.data else 'не существует'}")
+    
+    # Проверяем таблицу результатов
+    sessions = client.table('test_sessions').select('*').limit(1).execute()
+    print(f"Таблица test_sessions: {'существует' if sessions.data else 'не существует'}")
+    
+    return users.data, tests.data, questions.data, sessions.data
