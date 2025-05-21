@@ -7,7 +7,8 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from .models import UserCreate, User
 from .database import get_supabase
-from auth import authenticate_user, create_user, create_access_token
+from .auth import auth as auth_module
+from .auth import authenticate_user, create_user, create_access_token
 from ..config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from .routers import test, auth as auth_router
 
