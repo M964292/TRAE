@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "trae"
+version = "0.1.0"
+authors = [
+    { name="Your Name", email="you@example.com" }
+]
+description = "School Testing Application"
+requires-python = ">=3.11"
+
+[project.urls]
+"Homepage" = "https://github.com/M964292/TRAE"
+
+[tool.hatch.build.targets.wheel]
+packages = ["App"]
+
+[tool.hatch.build.targets.sdist]
+packages = ["App"]

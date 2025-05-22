@@ -5,22 +5,34 @@ from jose import jwt
 from .models.user import UserCreate, User
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, TEACHER_PASSWORD_HASH
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, TEACHER_PASSWORD_HASH, STUDENT_PASSWORD_HASH
 from .database import get_supabase
 
 # Настройка аутентификации
-# Используем конфигурацию из config.py
-
-# Хеширование паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # OAuth2 Password Flow
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
+# Проверка пароля
+async def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Проверить правильность пароля"""
     return pwd_context.verify(plain_password, hashed_password)
+
+# Аутентификация пользователя
+async def authenticate_user(email: str, password: str):
+    """Аутентифицировать пользователя"""
+    supabase = get_supabase()
+    user = supabase.table("users").select("*").eq("email", email).single().execute()
+    
+    if not user.data:
+        return False
+    
+    if not await verify_password(password, user.data.get("hashed_password")):
+        return False
+    
+    return user.data
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Создать JWT токен"""

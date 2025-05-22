@@ -12,19 +12,25 @@ from .models.session import TestSession
 from .models.answer import AnswerRecord
 from .database import get_supabase
 from .auth import authenticate_user, create_user, create_access_token
-from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, TEACHER_PASSWORD_HASH, STUDENT_PASSWORD_HASH
 from .routers import test_router, auth_router as auth_router
 from .database import create_tables, check_tables, create_test_user
+from datetime import datetime, timedelta
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import jwt
+from passlib.context import CryptContext
 
+# Создаем приложение
+app = FastAPI(
+    title="School Testing API",
+    description="API для системы тестирования в школе",
+    version="1.0.0"
+)
+
+# Инициализация базы данных
 create_tables()
 check_tables()
 create_test_user()
-
-app = FastAPI(
-    title="School Testing API",
-    description="API для управления тестированием в школе",
-    version="1.0.0"
-)
 
 # Настройка CORS
 app.add_middleware(
@@ -35,9 +41,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Настройка статических файлов и шаблонов
+# Подключение статических файлов
 app.mount("/static", StaticFiles(directory="App/static"), name="static")
+
+# Подключение шаблонов
+BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory="App/templates")
+
+# Подключение роутеров
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(test_router, prefix="/tests", tags=["tests"])
+
+# Security
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Регистрация пользователя
 @app.post("/register")
@@ -46,7 +62,7 @@ async def register(user: UserCreate):
         # Создаем нового пользователя в Supabase
         user_data = {
             "email": user.email,
-            "hashed_password": get_password_hash(user.password),
+            "hashed_password": pwd_context.hash(user.password),
             "full_name": user.full_name,
             "role": user.role,
             "specialization": user.specialization,
