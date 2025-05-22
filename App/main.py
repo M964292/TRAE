@@ -13,7 +13,7 @@ from .models.answer import AnswerRecord
 from .database import get_supabase
 from .auth import authenticate_user, create_user, create_access_token
 from ..config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, TEACHER_PASSWORD_HASH, STUDENT_PASSWORD_HASH
-from .routers import test_router, auth_router as auth_router
+from .routers import test_router, auth_router as auth_router, upload_router as upload_router
 from .database import create_tables, check_tables, create_test_user
 from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -47,6 +47,11 @@ app.mount("/static", StaticFiles(directory="App/static"), name="static")
 # Подключение шаблонов
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory="App/templates")
+
+# Подключение роутеров
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(test_router, prefix="/test", tags=["test"])
+app.include_router(upload_router, prefix="/upload", tags=["upload"])
 
 # Подключение роутеров
 app.include_router(auth_router, prefix="/auth", tags=["auth"])

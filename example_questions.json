@@ -1,0 +1,53 @@
+[
+    {
+        "id": "math_0001",
+        "type": "arithmetic",
+        "subject": "математика",
+        "topic": "сложение",
+        "difficulty": "простой",
+        "text": "Сколько будет 5 + 3?",
+        "options": [],
+        "correct_answer": "8",
+        "solution": "5 + 3 = 8",
+        "irt": {
+            "model": "3pl",
+            "a": 0.8,
+            "b": -1.0,
+            "c": 0.1
+        }
+    },
+    {
+        "id": "math_0002",
+        "type": "comparison",
+        "subject": "математика",
+        "topic": "сравнение чисел",
+        "difficulty": "средний",
+        "text": "Сравни числа: 25 и 37",
+        "options": ["<", ">", "="],
+        "correct_answer": "<",
+        "solution": "25 < 37",
+        "irt": {
+            "model": "3pl",
+            "a": 1.2,
+            "b": 0.5,
+            "c": 0.15
+        }
+    },
+    {
+        "id": "math_0003",
+        "type": "geometry",
+        "subject": "математика",
+        "topic": "периметр",
+        "difficulty": "средний",
+        "text": "Найдите периметр квадрата со стороной 6 см",
+        "options": [],
+        "correct_answer": "24",
+        "solution": "Периметр = 4 × 6 = 24 см",
+        "irt": {
+            "model": "3pl",
+            "a": 1.0,
+            "b": 0.0,
+            "c": 0.2
+        }
+    }
+]

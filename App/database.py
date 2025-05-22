@@ -5,7 +5,7 @@ from .models.test import Test
 from .models.question import Question
 from .models.session import TestSession
 from .models.answer import AnswerRecord
-from ..config import SUPABASE_URL, SUPABASE_KEY, TEACHER_PASSWORD_HASH, STUDENT_PASSWORD_HASH
+from config import SUPABASE_URL, SUPABASE_KEY, TEACHER_PASSWORD_HASH, STUDENT_PASSWORD_HASH
 import json
 from datetime import datetime, timezone
 
@@ -41,49 +41,94 @@ def create_tables():
         }
     )
     
-    # Создаем таблицу тестов
-    client.table('tests').create_if_not_exists(
+    # Создаем таблицу вопросов с параметрами IRT
+    client.table('questions').create_if_not_exists(
         columns={
             'id': 'uuid',
-            'name': 'text',
-            'description': 'text',
-            'questions': 'jsonb',
-            'created_by': 'text',
+            'text': 'text',
+            'type': 'text',  # comparison, fractions, geometry, etc.
+            'difficulty': 'float',
+            'a_parameter': 'float',  # дискриминационный параметр
+            'b_parameter': 'float',  # сложность
+            'c_parameter': 'float',  # вероятность угадывания
             'created_at': 'timestamp',
             'updated_at': 'timestamp'
         }
     )
     
-    # Создаем таблицу вопросов
-    client.table('questions').create_if_not_exists(
-        columns={
-            'id': 'uuid',
-            'text': 'text',
-            'options': 'jsonb',
-            'correct_option': 'integer',
-            'difficulty': 'integer',
-            'score': 'integer',
-            'topic': 'text',
-            'subtopic': 'text',
-            'test_id': 'uuid'
-        }
-    )
-    
-    # Создаем таблицу результатов тестирования
+    # Создаем таблицу сессий тестирования
     client.table('test_sessions').create_if_not_exists(
         columns={
             'id': 'uuid',
-            'user_id': 'text',
-            'session_id': 'text',
-            'start_time': 'timestamp',
-            'end_time': 'timestamp',
+            'user_id': 'uuid',
+            'started_at': 'timestamp',
+            'ended_at': 'timestamp',
+            'status': 'text',  # active, completed, abandoned
             'total_score': 'float',
-            'completed': 'boolean',
-            'answers': 'jsonb'
+            'created_at': 'timestamp',
+            'updated_at': 'timestamp'
+        }
+    )
+    
+    # Создаем таблицу ответов пользователей
+    client.table('user_answers').create_if_not_exists(
+        columns={
+            'id': 'uuid',
+            'user_id': 'uuid',
+            'test_session_id': 'uuid',
+            'question_id': 'uuid',
+            'answer': 'jsonb',
+            'is_correct': 'boolean',
+            'response_time': 'float',
+            'created_at': 'timestamp'
+        }
+    )
+    
+    # Создаем таблицу истории параметров IRT
+    client.table('irt_parameters_history').create_if_not_exists(
+        columns={
+            'id': 'uuid',
+            'question_id': 'uuid',
+            'a_parameter': 'float',
+            'b_parameter': 'float',
+            'c_parameter': 'float',
+            'sample_size': 'integer',
+            'updated_at': 'timestamp'
         }
     )
     
     print("Таблицы успешно созданы!")
+
+    # Создаем индексы для оптимизации производительности
+    client.query("CREATE INDEX idx_user_answers_user_id ON user_answers(user_id)")
+    client.query("CREATE INDEX idx_user_answers_question_id ON user_answers(question_id)")
+    client.query("CREATE INDEX idx_test_sessions_user_id ON test_sessions(user_id)")
+    client.query("CREATE INDEX idx_questions_type ON questions(type)")
+    client.query("CREATE INDEX idx_irt_parameters_question_id ON irt_parameters_history(question_id)")
+
+    # Создаем политики доступа
+    client.query("""
+        CREATE POLICY "Users can view their own data" ON users
+        FOR SELECT
+        USING (auth.uid() = id);
+    """)
+    client.query("""
+        CREATE POLICY "Teachers can view all test sessions" ON test_sessions
+        FOR SELECT
+        USING (auth.role() = 'teacher');
+    """)
+    client.query("""
+        CREATE POLICY "Students can view their own test sessions" ON test_sessions
+        FOR SELECT
+        USING (auth.uid() = user_id);
+    """)
+    client.query("""
+        CREATE POLICY "Users can insert their own answers" ON user_answers
+        FOR INSERT
+        WITH CHECK (auth.uid() = user_id);
+    """)
+
+    print("Индексы и политики успешно созданы!")
 
 def check_tables():
     """Проверяет существование таблиц в Supabase"""
