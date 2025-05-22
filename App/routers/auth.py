@@ -4,7 +4,7 @@ from typing import Dict, Any
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from ..models import UserCreate, User
+from ..models.user import UserCreate, User
 from ..database import get_supabase
 from ..config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 

@@ -1,4 +1,5 @@
 from datetime import datetime
+from .models.user import UserCreate, User
 from typing import Optional, List, Dict, Any
 
 class User:

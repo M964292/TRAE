@@ -1,4 +1,4 @@
-from .models import Student, Question, Result, AnswerRecord, TestSession
+from .models import Test, Question, AnswerRecord, TestSession, Student, Result
 from typing import List, Dict, Any, Optional, Union
 from sqlalchemy import create_engine, Column, Integer, String, Float, JSON, DateTime
 from sqlalchemy.ext.declarative import declarative_base

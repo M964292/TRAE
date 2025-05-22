@@ -2,9 +2,10 @@ from typing import Optional, Dict, Any
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import jwt
+from .models.user import UserCreate, User
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, TEACHER_PASSWORD_HASH
 from .database import get_supabase
 
 # Настройка аутентификации

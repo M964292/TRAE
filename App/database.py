@@ -1,8 +1,13 @@
 import os
-from supabase import create_client, Client
+from .models.user import User
+from .models.test import Test
+from .models.question import Question
+from .models.session import TestSession
+from .models.answer import AnswerRecord
 from config import SUPABASE_URL, SUPABASE_KEY
 import json
 from datetime import datetime, timezone
+from supabase import create_client, Client
 
 # Создаем клиент Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)

@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Dict, Any
 from datetime import datetime
-from ..models import Test, Question, AnswerRecord, TestSession
+from ..models import Test, Question
+from ..models.session import TestSession
+from ..models.answer import AnswerRecord
 from ..database import get_supabase
 from .auth import get_current_user
 
