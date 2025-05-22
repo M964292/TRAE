@@ -5,7 +5,7 @@ from .models.test import Test
 from .models.question import Question
 from .models.session import TestSession
 from .models.answer import AnswerRecord
-from config import SUPABASE_URL, SUPABASE_KEY, TEACHER_PASSWORD_HASH, STUDENT_PASSWORD_HASH
+from ..config import SUPABASE_URL, SUPABASE_KEY, TEACHER_PASSWORD_HASH, STUDENT_PASSWORD_HASH
 import json
 from datetime import datetime, timezone
 

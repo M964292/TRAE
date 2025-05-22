@@ -12,7 +12,7 @@ from .models.session import TestSession
 from .models.answer import AnswerRecord
 from .database import get_supabase
 from .auth import authenticate_user, create_user, create_access_token
-from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, TEACHER_PASSWORD_HASH, STUDENT_PASSWORD_HASH
+from ..config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, TEACHER_PASSWORD_HASH, STUDENT_PASSWORD_HASH
 from .routers import test_router, auth_router as auth_router
 from .database import create_tables, check_tables, create_test_user
 from datetime import datetime, timedelta
