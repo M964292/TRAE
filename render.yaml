@@ -2,6 +2,7 @@ services:
   - type: web
     name: traebackend
     env: python
+    nodeVersion: 18.19.0
     rootDirectory: .
     buildCommand: |
       # Установка зависимостей Python
