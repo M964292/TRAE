@@ -5,12 +5,15 @@ services:
     nodeVersion: 18.19.0
     rootDirectory: .
     buildCommand: |
+      # Установка зависимостей Node.js
+      cd frontend && npm install
+      
+      # Сборка фронтенда
+      cd frontend && npm run build
+      
       # Установка зависимостей Python
       pip install -r requirements.txt
       pip install "fastapi>=0.109.0" "supabase>=2.0.0"
-      
-      # Установка зависимостей Node.js
-      cd frontend && npm install && npm run build
       
       # Создаем необходимые директории
       mkdir -p /opt/render/project/src/App/static
