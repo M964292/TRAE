@@ -18,6 +18,12 @@ var/
 wheels/
 *.egg-info/
 .installed.cfg
+# API keys and secrets
+*.key
+*.secret
+*.env
+*.env.*
+create_tables*
 
 # Environment variables
 .env
