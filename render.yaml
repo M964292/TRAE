@@ -6,8 +6,8 @@ services:
     buildCommand: |
       # Установка зависимостей Python
       pip install -r requirements.txt
-      pip install "fastapi>=0.109.0"
-  
+      pip install "fastapi>=0.109.0" "supabase>=2.0.0"
+      
       # Установка зависимостей Node.js
       cd frontend && npm install && npm run build
       
@@ -19,6 +19,18 @@ services:
       # Копируем статические файлы
       cp -r frontend/public/* /opt/render/project/src/App/static/ || true
       cp -r frontend/build/* /opt/render/project/src/App/static/ || true
+    
+    envVars:
+      - key: SUPABASE_URL
+        value: https://wtycmnktsegvpduiylfq.supabase.co
+      - key: SUPABASE_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0eWNtbmt0c2VndnBkdWl5bGZxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzgyOTQ4MCwiZXhwIjoyMDYzNDA1NDgwfQ.rGchuGjDLxWyh-44TmZ81gf6QWxute_Du0WD7p-JllY
+      - key: SECRET_KEY
+        value: your-secret-key-here
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
       
       # Создаем файл index.html в директории static
       echo '<!DOCTYPE html>
