@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from typing import List
 import json
-from ..database import get_supabase
+from ..supabase_client import get_questions, add_question
 from ..models.question import Question
 from ..auth import get_current_user, User
 
@@ -41,9 +41,6 @@ async def upload_questions(
             detail="Неверный формат JSON файла"
         )
 
-    # Создаем клиент Supabase
-    supabase = get_supabase()
-    
     # Список для сохранения идентификаторов новых вопросов
     created_questions = []
     
@@ -77,8 +74,8 @@ async def upload_questions(
                     raise ValueError("Параметр c должен быть в диапазоне [0, 0.3]")
             
             # Загружаем вопрос в базу данных
-            result = supabase.table("questions").insert(question_data).execute()
-            created_questions.append(result.data[0])
+            result = add_question(question_data)
+            created_questions.append(result[0])
             
         except Exception as e:
             raise HTTPException(
@@ -107,6 +104,5 @@ async def download_questions(
             detail="Только учителя могут загружать вопросы"
         )
     
-    supabase = get_supabase()
-    questions = supabase.table("questions").select("*").execute()
-    return questions.data
+    questions = get_questions()
+    return questions

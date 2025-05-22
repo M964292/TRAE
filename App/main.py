@@ -10,11 +10,10 @@ from .models.test import Test
 from .models.question import Question
 from .models.session import TestSession
 from .models.answer import AnswerRecord
-from .database import get_supabase
+from ..supabase_client import supabase
 from .auth import authenticate_user, create_user, create_access_token
 from ..config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, TEACHER_PASSWORD_HASH, STUDENT_PASSWORD_HASH
 from .routers import test_router, auth_router as auth_router, upload_router as upload_router
-from .database import create_tables, check_tables, create_test_user
 from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt
@@ -27,10 +26,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Инициализация базы данных
-create_tables()
-check_tables()
-create_test_user()
+# Инициализация Supabase
+supabase = supabase
 
 # Настройка CORS
 app.add_middleware(
