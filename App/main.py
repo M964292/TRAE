@@ -19,18 +19,29 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt
 from passlib.context import CryptContext
 
-# Создаем приложение
+# Создаем приложение с CORS
 app = FastAPI(
     title="School Testing API",
-    description="API для системы тестирования в школе",
+    description="API для тестовой системы",
     version="1.0.0"
 )
 
-# Инициализация Supabase
-supabase = supabase
-
-# Настройка CORS
+# Добавляем CORS middleware
 app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Разрешаем все origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Разрешаем все методы
+    allow_headers=["*"],  # Разрешаем все headers
+)
+
+# Добавляем роутеры
+app.include_router(test_router)
+app.include_router(auth_router)
+app.include_router(upload_router)
+
+# Инициализация Supabase
+supabase = supabase_client
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
