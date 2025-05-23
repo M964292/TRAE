@@ -10,7 +10,7 @@ from .models.test import Test
 from .models.question import Question
 from .models.session import TestSession
 from .models.answer import AnswerRecord
-from .. import supabase_client
+from ..supabase_client import supabase_client
 from .auth import authenticate_user, create_user, create_access_token
 from ..config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, TEACHER_PASSWORD_HASH, STUDENT_PASSWORD_HASH
 from .routers import test_router, auth_router as auth_router, upload_router as upload_router

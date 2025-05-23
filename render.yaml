@@ -4,6 +4,7 @@ services:
     env: python
     nodeVersion: 18.19.0
     rootDirectory: .
+    startCommand: "uvicorn App.main:app --host=0.0.0.0 --port=$PORT"
     buildCommand: |
       # Установка зависимостей Node.js
       cd frontend && npm install
