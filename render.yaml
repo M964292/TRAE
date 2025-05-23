@@ -4,7 +4,6 @@ services:
     env: python
     nodeVersion: 18.19.0
     rootDirectory: .
-    startCommand: "poetry run uvicorn App.main:app --host=0.0.0.0 --port=$PORT"
     buildCommand: |
       # Установка зависимостей Python через Poetry
       poetry install
@@ -23,6 +22,9 @@ services:
       # Копируем статические файлы
       cp -r frontend/public/* /opt/render/project/src/App/static/ || true
       cp -r frontend/build/* /opt/render/project/src/App/static/ || true
+      
+      # Создаем Procfile если его нет
+      echo "web: poetry run uvicorn App.main:app --host=0.0.0.0 --port=$PORT" > Procfile
     
     envVars:
       - key: SUPABASE_URL
