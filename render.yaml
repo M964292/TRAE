@@ -6,9 +6,8 @@ services:
     rootDirectory: .
     startCommand: "python -m uvicorn App.main:app --host=0.0.0.0 --port=$PORT"
     buildCommand: |
-      # Установка зависимостей Python через pip
+      # Установка всех зависимостей Python из requirements.txt
       pip install -r requirements.txt
-      pip install "fastapi>=0.109.0" "supabase>=2.0.0" "uvicorn>=0.27.0"
       
       # Установка зависимостей Node.js
       cd frontend && npm install
